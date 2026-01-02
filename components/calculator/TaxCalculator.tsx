@@ -119,7 +119,7 @@ export function TaxCalculator() {
       </div>
 
       {/* Results */}
-      <ResultsPanel results={results} />
+      <ResultsPanel results={results} yourJobs={state.you} spouseJobs={state.spouse} />
 
       {/* Bracket Editor Dialog */}
       <div className="flex justify-center">

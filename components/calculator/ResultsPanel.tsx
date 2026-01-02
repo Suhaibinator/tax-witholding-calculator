@@ -1,23 +1,35 @@
 "use client";
 
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import type { TaxResults, PartnerBreakdown } from "@/lib/types";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
+import type { TaxResults, PartnerBreakdown, Job } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/currency";
 import { cn } from "@/lib/utils";
 
 interface ResultsPanelProps {
   results: TaxResults;
+  yourJobs: Job[];
+  spouseJobs: Job[];
 }
 
 function PartnerCard({
   label,
   partner,
   effectiveTaxRate,
+  jobs,
 }: {
   label: string;
   partner: PartnerBreakdown;
   effectiveTaxRate: number;
+  jobs: Job[];
 }) {
+  const [isOpen, setIsOpen] = useState(false);
   const isUnderWithholding = partner.underWithholding > 0.01;
   const isOverWithholding = partner.underWithholding < -0.01;
   const hasIncome = partner.gross > 0.01;
@@ -25,6 +37,9 @@ function PartnerCard({
   // Compare their withholding rate to the effective tax rate
   const rateGap = effectiveTaxRate - partner.effectiveWithholdingRate;
   const isWithholdingLow = rateGap > 0.001;
+
+  // Filter jobs with income
+  const jobsWithIncome = jobs.filter((job) => job.gross > 0);
 
   return (
     <Card className={cn(
@@ -110,6 +125,68 @@ function PartnerCard({
                 </span>
               </div>
             </div>
+
+            {/* Collapsible Per-Job Breakdown */}
+            {jobsWithIncome.length > 0 && (
+              <Collapsible open={isOpen} onOpenChange={setIsOpen} className="mt-3 pt-2 border-t">
+                <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full">
+                  <ChevronDown className={cn(
+                    "h-3 w-3 transition-transform",
+                    isOpen && "rotate-180"
+                  )} />
+                  <span>View by Job ({jobsWithIncome.length})</span>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {jobsWithIncome.map((job) => {
+                    const totalWithheld = job.fed + job.state;
+                    const totalRate = job.gross > 0 ? totalWithheld / job.gross : 0;
+                    const fedRate = job.gross > 0 ? job.fed / job.gross : 0;
+                    const stateRate = job.gross > 0 ? job.state / job.gross : 0;
+                    const jobIsLow = effectiveTaxRate - totalRate > 0.001;
+
+                    return (
+                      <div
+                        key={job.id}
+                        className={cn(
+                          "p-2 rounded-md text-xs",
+                          jobIsLow ? "bg-red-50 border border-red-200" : "bg-gray-50 border border-gray-200"
+                        )}
+                      >
+                        <div className="font-medium mb-1">
+                          {job.name || "Unnamed Job"}
+                        </div>
+                        <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-muted-foreground">
+                          <div>Gross:</div>
+                          <div className="text-right font-mono text-foreground">
+                            {formatCurrency(job.gross)}
+                          </div>
+                          <div>Fed W/H:</div>
+                          <div className="text-right font-mono text-foreground">
+                            {formatCurrency(job.fed)}
+                            <span className="text-muted-foreground ml-1">({formatPercent(fedRate)})</span>
+                          </div>
+                          <div>State W/H:</div>
+                          <div className="text-right font-mono text-foreground">
+                            {formatCurrency(job.state)}
+                            <span className="text-muted-foreground ml-1">({formatPercent(stateRate)})</span>
+                          </div>
+                          <div className="font-medium">Total:</div>
+                          <div className={cn(
+                            "text-right font-mono font-medium",
+                            jobIsLow ? "text-red-600" : "text-green-600"
+                          )}>
+                            {formatCurrency(totalWithheld)}
+                            <span className={cn("ml-1", jobIsLow ? "text-red-600" : "text-green-600")}>
+                              ({formatPercent(totalRate)})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CollapsibleContent>
+              </Collapsible>
+            )}
           </>
         ) : (
           <p className="text-xs text-muted-foreground italic">No income entered</p>
@@ -119,7 +196,7 @@ function PartnerCard({
   );
 }
 
-export function ResultsPanel({ results }: ResultsPanelProps) {
+export function ResultsPanel({ results, yourJobs, spouseJobs }: ResultsPanelProps) {
   const isSufficient = results.totalAdd < 0.01;
 
   return (
@@ -208,11 +285,13 @@ export function ResultsPanel({ results }: ResultsPanelProps) {
               label="You"
               partner={results.you}
               effectiveTaxRate={results.effectiveTaxRate}
+              jobs={yourJobs}
             />
             <PartnerCard
               label="Spouse"
               partner={results.spouse}
               effectiveTaxRate={results.effectiveTaxRate}
+              jobs={spouseJobs}
             />
           </div>
         </div>
