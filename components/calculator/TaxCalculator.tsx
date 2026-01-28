@@ -119,7 +119,14 @@ export function TaxCalculator() {
       </div>
 
       {/* Results */}
-      <ResultsPanel results={results} yourJobs={state.you} spouseJobs={state.spouse} />
+      <ResultsPanel
+        results={results}
+        yourJobs={state.you}
+        spouseJobs={state.spouse}
+        fedBrackets={state.fedBrackets[state.settings.filingStatus]}
+        stateBrackets={state.stateBrackets[state.settings.filingStatus]}
+        mode={state.settings.mode}
+      />
 
       {/* Bracket Editor Dialog */}
       <div className="flex justify-center">

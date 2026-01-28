@@ -8,14 +8,18 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
-import type { TaxResults, PartnerBreakdown, Job } from "@/lib/types";
+import type { TaxResults, PartnerBreakdown, Job, TaxBracket } from "@/lib/types";
 import { formatCurrency, formatPercent } from "@/lib/currency";
 import { cn } from "@/lib/utils";
+import { BracketVisualization } from "./BracketVisualization";
 
 interface ResultsPanelProps {
   results: TaxResults;
   yourJobs: Job[];
   spouseJobs: Job[];
+  fedBrackets: TaxBracket[];
+  stateBrackets: TaxBracket[];
+  mode: "top" | "progressive";
 }
 
 function PartnerCard({
@@ -196,7 +200,7 @@ function PartnerCard({
   );
 }
 
-export function ResultsPanel({ results, yourJobs, spouseJobs }: ResultsPanelProps) {
+export function ResultsPanel({ results, yourJobs, spouseJobs, fedBrackets, stateBrackets, mode }: ResultsPanelProps) {
   const isSufficient = results.totalAdd < 0.01;
 
   return (
@@ -276,6 +280,25 @@ export function ResultsPanel({ results, yourJobs, spouseJobs }: ResultsPanelProp
           <span className="font-mono font-medium">{formatPercent(results.effectiveTaxRate)}</span>
           <span className="text-xs text-muted-foreground">(target withholding rate)</span>
         </div>
+
+        {/* Bracket Visualization (progressive mode only) */}
+        {mode === "progressive" && (
+          <div className="pt-2">
+            <p className="text-sm font-medium mb-3">Marginal Tax Brackets</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <BracketVisualization
+                brackets={fedBrackets}
+                taxableIncome={results.fedTaxable}
+                label="Federal"
+              />
+              <BracketVisualization
+                brackets={stateBrackets}
+                taxableIncome={results.stateTaxable}
+                label="State"
+              />
+            </div>
+          </div>
+        )}
 
         {/* Partner Breakdown */}
         <div className="pt-2">
