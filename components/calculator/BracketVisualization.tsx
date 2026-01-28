@@ -76,6 +76,31 @@ export function BracketVisualization({
     return 0;
   });
 
+  // Cumulative tax fills for withheld & estimated lines
+  const cumTaxAtFloor: number[] = [];
+  const taxCapacity: number[] = [];
+  let cumTax = 0;
+  for (let i = 0; i < segments.length; i++) {
+    cumTaxAtFloor.push(cumTax);
+    const width =
+      segments[i].ceiling !== null
+        ? segments[i].ceiling! - segments[i].floor
+        : maxFiniteWidth;
+    taxCapacity.push(width * segments[i].rate);
+    cumTax += taxCapacity[i];
+  }
+
+  function taxFill(taxAmount: number, segIndex: number): number {
+    const ceil = cumTaxAtFloor[segIndex] + taxCapacity[segIndex];
+    if (taxAmount >= ceil) return 1;
+    if (taxAmount > cumTaxAtFloor[segIndex])
+      return (taxAmount - cumTaxAtFloor[segIndex]) / taxCapacity[segIndex];
+    return 0;
+  }
+
+  const withheldFills = segments.map((_, i) => taxFill(withheld, i));
+  const estimatedFills = segments.map((_, i) => taxFill(estimatedTax, i));
+
   // Marginal rate: rate of the bracket where income currently sits
   let marginalRate = 0;
   if (taxableIncome > 0) {
@@ -98,6 +123,8 @@ export function BracketVisualization({
       fill: fills[i],
       isActive: fills[i] > 0 && fills[i] < 1,
       isFull: fills[i] >= 1,
+      withheldFill: withheldFills[i],
+      estimatedFill: estimatedFills[i],
     }))
     .reverse();
 
@@ -138,6 +165,22 @@ export function BracketVisualization({
                 <div
                   className="absolute left-0 right-0 border-t-2 border-dashed border-blue-500"
                   style={{ bottom: `${seg.fill * 100}%` }}
+                />
+              )}
+
+              {/* Withheld (paid) line — green */}
+              {seg.withheldFill > 0 && seg.withheldFill < 1 && (
+                <div
+                  className="absolute left-0 right-0 border-t-2 border-dashed border-green-500"
+                  style={{ bottom: `${seg.withheldFill * 100}%` }}
+                />
+              )}
+
+              {/* Estimated tax line — red */}
+              {seg.estimatedFill > 0 && seg.estimatedFill < 1 && (
+                <div
+                  className="absolute left-0 right-0 border-t-2 border-dashed border-red-400"
+                  style={{ bottom: `${seg.estimatedFill * 100}%` }}
                 />
               )}
 
