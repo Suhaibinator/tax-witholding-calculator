@@ -290,11 +290,15 @@ export function ResultsPanel({ results, yourJobs, spouseJobs, fedBrackets, state
                 brackets={fedBrackets}
                 taxableIncome={results.fedTaxable}
                 label="Federal"
+                withheld={results.totalFedWithheld}
+                estimatedTax={results.fedTax}
               />
               <BracketVisualization
                 brackets={stateBrackets}
                 taxableIncome={results.stateTaxable}
                 label="State"
+                withheld={results.totalStateWithheld}
+                estimatedTax={results.stateTax}
               />
             </div>
           </div>

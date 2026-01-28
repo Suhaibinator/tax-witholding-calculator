@@ -8,6 +8,8 @@ interface BracketVisualizationProps {
   brackets: TaxBracket[];
   taxableIncome: number;
   label: string;
+  withheld: number;
+  estimatedTax: number;
 }
 
 /** Compact dollar display: $0, $12K, $197K, $1.2M */
@@ -26,6 +28,8 @@ export function BracketVisualization({
   brackets,
   taxableIncome,
   label,
+  withheld,
+  estimatedTax,
 }: BracketVisualizationProps) {
   if (brackets.length === 0) return null;
 
@@ -183,6 +187,36 @@ export function BracketVisualization({
             {formatPercent(marginalRate)}
           </span>
         </p>
+        <hr className="my-1 border-muted-foreground/30" />
+        <p className="text-xs text-muted-foreground">
+          Withheld:{" "}
+          <span className="font-mono font-medium text-foreground">
+            {formatCurrencyCompact(withheld)}
+          </span>
+        </p>
+        <p className="text-xs text-muted-foreground">
+          Estimated Tax:{" "}
+          <span className="font-mono font-medium text-foreground">
+            {formatCurrencyCompact(estimatedTax)}
+          </span>
+        </p>
+        {(() => {
+          const additional = Math.max(0, estimatedTax - withheld);
+          const onTrack = additional <= 0;
+          return (
+            <p className="text-xs text-muted-foreground">
+              Additional:{" "}
+              <span
+                className={cn(
+                  "font-mono font-medium",
+                  onTrack ? "text-green-600" : "text-red-600"
+                )}
+              >
+                {onTrack ? "On track" : formatCurrencyCompact(additional)}
+              </span>
+            </p>
+          );
+        })()}
       </div>
     </div>
   );
