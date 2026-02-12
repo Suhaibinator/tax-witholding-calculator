@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,14 +41,16 @@ export function SettingsPanel({
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg">Settings</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <Card className="card-hover overflow-hidden">
+      <div className="px-6 pt-5 pb-3 border-b border-border/60">
+        <h2 className="font-display text-lg font-semibold tracking-tight">Settings</h2>
+      </div>
+      <CardContent className="pt-5 space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-2">
-            <Label htmlFor="mode">Calculation Mode</Label>
+            <Label htmlFor="mode" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Calculation Mode
+            </Label>
             <Select
               value={settings.mode}
               onValueChange={(value: "top" | "progressive") =>
@@ -70,7 +72,9 @@ export function SettingsPanel({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="filingStatus">Filing Status</Label>
+            <Label htmlFor="filingStatus" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Filing Status
+            </Label>
             <Select
               value={settings.filingStatus}
               onValueChange={handleFilingStatusChange}
@@ -91,7 +95,9 @@ export function SettingsPanel({
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="federalTopRate">Federal Top Rate</Label>
+            <Label htmlFor="federalTopRate" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Federal Top Rate
+            </Label>
             <Input
               id="federalTopRate"
               type="number"
@@ -100,11 +106,14 @@ export function SettingsPanel({
               onChange={(e) =>
                 handleChange({ federalTopRate: parseFloat(e.target.value) || 0 })
               }
+              className="tabular-nums"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stateTopRate">State Top Rate</Label>
+            <Label htmlFor="stateTopRate" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              State Top Rate
+            </Label>
             <Input
               id="stateTopRate"
               type="number"
@@ -113,11 +122,14 @@ export function SettingsPanel({
               onChange={(e) =>
                 handleChange({ stateTopRate: parseFloat(e.target.value) || 0 })
               }
+              className="tabular-nums"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="fedStdDed">Federal Std. Deduction</Label>
+            <Label htmlFor="fedStdDed" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Federal Std. Ded.
+            </Label>
             <Input
               id="fedStdDed"
               type="number"
@@ -126,11 +138,14 @@ export function SettingsPanel({
               onChange={(e) =>
                 handleChange({ fedStdDed: parseFloat(e.target.value) || 0 })
               }
+              className="tabular-nums"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="stateStdDed">State Std. Deduction</Label>
+            <Label htmlFor="stateStdDed" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              State Std. Ded.
+            </Label>
             <Input
               id="stateStdDed"
               type="number"
@@ -139,13 +154,16 @@ export function SettingsPanel({
               onChange={(e) =>
                 handleChange({ stateStdDed: parseFloat(e.target.value) || 0 })
               }
+              className="tabular-nums"
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="otherAdj">Other Adjustments</Label>
+            <Label htmlFor="otherAdj" className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              Other Adjustments
+            </Label>
             <Input
               id="otherAdj"
               type="number"
@@ -154,13 +172,14 @@ export function SettingsPanel({
               onChange={(e) =>
                 handleChange({ otherAdj: parseFloat(e.target.value) || 0 })
               }
+              className="tabular-nums"
             />
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground/70 italic">
               e.g., pre-tax 401(k) contributions
             </p>
           </div>
 
-          <div className="flex items-center space-x-2 pt-6">
+          <div className="flex items-center space-x-2.5 pt-6">
             <Checkbox
               id="caMhs"
               checked={settings.caMhs}
@@ -168,7 +187,7 @@ export function SettingsPanel({
                 handleChange({ caMhs: checked === true })
               }
             />
-            <Label htmlFor="caMhs" className="text-sm font-normal">
+            <Label htmlFor="caMhs" className="text-sm font-normal cursor-pointer">
               CA 1% MHS surtax (&gt; $1,000,000 taxable)
             </Label>
           </div>

@@ -12,7 +12,6 @@ interface BracketVisualizationProps {
   estimatedTax: number;
 }
 
-/** Compact dollar display: $0, $12K, $197K, $1.2M */
 function fmtCompact(n: number): string {
   if (n >= 1_000_000) {
     const m = n / 1_000_000;
@@ -24,6 +23,23 @@ function fmtCompact(n: number): string {
   return `$${Math.round(n)}`;
 }
 
+// Warm tonal bracket palette — from amber to deep rose
+const BRACKET_COLORS = [
+  { fill: "#fef3c7", active: "#f59e0b", text: "#92400e" },   // amber-100
+  { fill: "#fde68a", active: "#f59e0b", text: "#92400e" },   // amber-200
+  { fill: "#fed7aa", active: "#ea580c", text: "#9a3412" },   // orange-200
+  { fill: "#fdba74", active: "#ea580c", text: "#9a3412" },   // orange-300
+  { fill: "#fca5a5", active: "#dc2626", text: "#991b1b" },   // red-300
+  { fill: "#f87171", active: "#dc2626", text: "#991b1b" },   // red-400
+  { fill: "#e879f9", active: "#a855f7", text: "#6b21a8" },   // fuchsia-400
+  { fill: "#c084fc", active: "#7c3aed", text: "#5b21b6" },   // purple-400
+  { fill: "#a78bfa", active: "#6d28d9", text: "#4c1d95" },   // violet-400
+  { fill: "#818cf8", active: "#4f46e5", text: "#3730a3" },   // indigo-400
+  { fill: "#93c5fd", active: "#3b82f6", text: "#1e40af" },   // blue-300
+  { fill: "#7dd3fc", active: "#0ea5e9", text: "#075985" },   // sky-300
+  { fill: "#67e8f9", active: "#06b6d4", text: "#155e75" },   // cyan-300
+];
+
 export function BracketVisualization({
   brackets,
   taxableIncome,
@@ -33,7 +49,6 @@ export function BracketVisualization({
 }: BracketVisualizationProps) {
   if (brackets.length === 0) return null;
 
-  // Build segment data from ordered brackets
   const segments = brackets.map((bracket, i) => {
     const floor = i === 0 ? 0 : (brackets[i - 1].upTo ?? 0);
     const ceiling = bracket.upTo;
@@ -41,7 +56,6 @@ export function BracketVisualization({
     return { floor, ceiling, rate };
   });
 
-  // Cap the top bracket's display width at the largest finite bracket width
   const finiteWidths = segments
     .filter((s) => s.ceiling !== null)
     .map((s) => s.ceiling! - s.floor);
@@ -52,18 +66,16 @@ export function BracketVisualization({
     s.ceiling !== null ? s.ceiling - s.floor : maxFiniteWidth
   );
 
-  // Sqrt-scaled heights
   const sqrtWidths = displayWidths.map((w) => Math.sqrt(Math.max(w, 1)));
   const totalSqrt = sqrtWidths.reduce((a, b) => a + b, 0);
-  const TOTAL_HEIGHT = 320;
-  const MIN_HEIGHT = 32;
+  const TOTAL_HEIGHT = 340;
+  const MIN_HEIGHT = 28;
 
   let heights = sqrtWidths.map((sw) => (sw / totalSqrt) * TOTAL_HEIGHT);
   heights = heights.map((h) => Math.max(h, MIN_HEIGHT));
   const actualTotal = heights.reduce((a, b) => a + b, 0);
   heights = heights.map((h) => (h / actualTotal) * TOTAL_HEIGHT);
 
-  // Fill percentages
   const fills = segments.map((seg) => {
     if (seg.ceiling === null) {
       return taxableIncome > seg.floor
@@ -76,7 +88,6 @@ export function BracketVisualization({
     return 0;
   });
 
-  // Cumulative tax fills for withheld & estimated lines
   const cumTaxAtFloor: number[] = [];
   const taxCapacity: number[] = [];
   let cumTax = 0;
@@ -101,7 +112,6 @@ export function BracketVisualization({
   const withheldFills = segments.map((_, i) => taxFill(withheld, i));
   const estimatedFills = segments.map((_, i) => taxFill(estimatedTax, i));
 
-  // Marginal rate: rate of the bracket where income currently sits
   let marginalRate = 0;
   if (taxableIncome > 0) {
     for (let i = 0; i < segments.length; i++) {
@@ -115,7 +125,6 @@ export function BracketVisualization({
     }
   }
 
-  // Build render data (reversed: highest bracket at top of DOM)
   const renderData = segments
     .map((seg, i) => ({
       ...seg,
@@ -125,13 +134,17 @@ export function BracketVisualization({
       isFull: fills[i] >= 1,
       withheldFill: withheldFills[i],
       estimatedFill: estimatedFills[i],
+      color: BRACKET_COLORS[i % BRACKET_COLORS.length],
     }))
     .reverse();
 
+  const additional = Math.max(0, estimatedTax - withheld);
+  const onTrack = additional <= 0;
+
   return (
     <div className="flex flex-col items-center w-full">
-      <p className="text-sm font-medium mb-2">{label}</p>
-      <div className="w-full border-2 border-gray-300 rounded-sm overflow-hidden">
+      <p className="text-sm font-display font-semibold mb-3">{label}</p>
+      <div className="w-full rounded-xl overflow-hidden border border-border/60 shadow-sm">
         {renderData.map((seg) => {
           const pct = Math.round(seg.rate * 1000) / 10;
           const rateLabel = `${Number.isInteger(pct) ? pct.toFixed(0) : pct.toFixed(1)}%`;
@@ -144,69 +157,92 @@ export function BracketVisualization({
             <div
               key={`${seg.rate}-${seg.floor}`}
               className={cn(
-                "relative w-full border-b border-gray-200 last:border-b-0",
-                seg.isActive && "z-10 ring-1 ring-inset ring-blue-400"
+                "relative w-full border-b border-border/20 last:border-b-0 transition-all duration-300",
+                seg.isActive && "z-10"
               )}
               style={{ height: seg.height }}
             >
-              {/* Background */}
-              <div className="absolute inset-0 bg-gray-100" />
+              {/* Base background */}
+              <div className="absolute inset-0 bg-muted/20" />
 
-              {/* Blue fill from bottom */}
+              {/* Colored fill from bottom */}
               {seg.fill > 0 && (
                 <div
-                  className="absolute bottom-0 left-0 right-0 bg-blue-200"
-                  style={{ height: `${seg.fill * 100}%` }}
+                  className="absolute bottom-0 left-0 right-0 transition-all duration-500"
+                  style={{
+                    height: `${seg.fill * 100}%`,
+                    backgroundColor: seg.color.fill,
+                    opacity: seg.isFull ? 0.7 : 0.85,
+                  }}
                 />
               )}
 
-              {/* Water line for active bracket */}
+              {/* Active bracket highlight bar */}
               {seg.isActive && (
-                <div
-                  className="absolute left-0 right-0 border-t-2 border-dashed border-blue-500"
-                  style={{ bottom: `${seg.fill * 100}%` }}
-                />
+                <>
+                  <div
+                    className="absolute left-0 right-0 h-0.5"
+                    style={{
+                      bottom: `${seg.fill * 100}%`,
+                      background: `linear-gradient(to right, ${seg.color.active}, transparent)`,
+                    }}
+                  />
+                  <div
+                    className="absolute left-0 w-1 rounded-r-full"
+                    style={{
+                      bottom: 0,
+                      height: `${seg.fill * 100}%`,
+                      backgroundColor: seg.color.active,
+                    }}
+                  />
+                </>
               )}
 
-              {/* Withheld (paid) line — green */}
+              {/* Withheld (paid) line */}
               {seg.withheldFill > 0 && seg.withheldFill < 1 && (
                 <div
-                  className="absolute left-0 right-0 border-t-2 border-dashed border-green-500"
-                  style={{ bottom: `${seg.withheldFill * 100}%` }}
+                  className="absolute left-0 right-0 border-t-2 border-dashed"
+                  style={{
+                    bottom: `${seg.withheldFill * 100}%`,
+                    borderColor: "#047857",
+                  }}
                 />
               )}
 
-              {/* Estimated tax line — red */}
+              {/* Estimated tax line */}
               {seg.estimatedFill > 0 && seg.estimatedFill < 1 && (
                 <div
-                  className="absolute left-0 right-0 border-t-2 border-dashed border-red-400"
-                  style={{ bottom: `${seg.estimatedFill * 100}%` }}
+                  className="absolute left-0 right-0 border-t-2 border-dashed"
+                  style={{
+                    bottom: `${seg.estimatedFill * 100}%`,
+                    borderColor: "#be123c",
+                  }}
                 />
               )}
 
               {/* Labels */}
-              <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
+              <div className="absolute inset-0 flex items-center justify-between px-3 pointer-events-none">
                 <span
-                  className={cn(
-                    "text-xs font-semibold",
-                    seg.isActive
-                      ? "text-blue-700"
+                  className="text-xs font-semibold font-mono"
+                  style={{
+                    color: seg.isActive
+                      ? seg.color.text
                       : seg.isFull
-                        ? "text-blue-900/70"
-                        : "text-gray-400"
-                  )}
+                        ? seg.color.text + "99"
+                        : "#a8a29e",
+                  }}
                 >
                   {rateLabel}
                 </span>
                 <span
-                  className={cn(
-                    "text-[10px] leading-tight",
-                    seg.isActive
-                      ? "text-blue-600"
+                  className="text-[10px] font-mono"
+                  style={{
+                    color: seg.isActive
+                      ? seg.color.text + "cc"
                       : seg.isFull
-                        ? "text-blue-800/50"
-                        : "text-gray-400"
-                  )}
+                        ? seg.color.text + "66"
+                        : "#a8a29e88",
+                  }}
                 >
                   {rangeLabel}
                 </span>
@@ -216,50 +252,50 @@ export function BracketVisualization({
         })}
       </div>
 
-      {/* Caption */}
-      <div className="mt-2 text-center space-y-0.5">
-        <p className="text-xs text-muted-foreground">
-          Taxable:{" "}
-          <span className="font-mono font-medium text-foreground">
+      {/* Caption — refined ledger style */}
+      <div className="mt-3 w-full space-y-2">
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground">Taxable</span>
+          <span className="font-mono tabular-nums font-medium">
             {formatCurrencyCompact(taxableIncome)}
           </span>
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Marginal Rate:{" "}
-          <span className="font-mono font-medium text-foreground">
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground">Marginal Rate</span>
+          <span className="font-mono tabular-nums font-medium">
             {formatPercent(marginalRate)}
           </span>
-        </p>
-        <hr className="my-1 border-muted-foreground/30" />
-        <p className="text-xs text-muted-foreground">
-          Withheld:{" "}
-          <span className="font-mono font-medium text-foreground">
+        </div>
+        <div className="h-px bg-border/50 my-1" />
+        <div className="flex justify-between text-xs items-center">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-0.5 border-t-2 border-dashed" style={{ borderColor: "#047857" }} />
+            <span className="text-muted-foreground">Withheld</span>
+          </span>
+          <span className="font-mono tabular-nums font-medium">
             {formatCurrencyCompact(withheld)}
           </span>
-        </p>
-        <p className="text-xs text-muted-foreground">
-          Estimated Tax:{" "}
-          <span className="font-mono font-medium text-foreground">
+        </div>
+        <div className="flex justify-between text-xs items-center">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block w-3 h-0.5 border-t-2 border-dashed" style={{ borderColor: "#be123c" }} />
+            <span className="text-muted-foreground">Estimated Tax</span>
+          </span>
+          <span className="font-mono tabular-nums font-medium">
             {formatCurrencyCompact(estimatedTax)}
           </span>
-        </p>
-        {(() => {
-          const additional = Math.max(0, estimatedTax - withheld);
-          const onTrack = additional <= 0;
-          return (
-            <p className="text-xs text-muted-foreground">
-              Additional:{" "}
-              <span
-                className={cn(
-                  "font-mono font-medium",
-                  onTrack ? "text-green-600" : "text-red-600"
-                )}
-              >
-                {onTrack ? "On track" : formatCurrencyCompact(additional)}
-              </span>
-            </p>
-          );
-        })()}
+        </div>
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground">Additional</span>
+          <span
+            className={cn(
+              "font-mono tabular-nums font-semibold",
+              onTrack ? "text-[#047857]" : "text-[#be123c]"
+            )}
+          >
+            {onTrack ? "On track" : formatCurrencyCompact(additional)}
+          </span>
+        </div>
       </div>
     </div>
   );

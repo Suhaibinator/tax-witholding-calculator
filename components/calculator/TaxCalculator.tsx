@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { SettingsPanel } from "./SettingsPanel";
 import { JobTable } from "./JobTable";
@@ -72,77 +72,99 @@ export function TaxCalculator() {
     setState((prev) => ({ ...prev, stateBrackets }));
   };
 
-  // Show loading skeleton while localStorage is being read
   if (!isLoaded) {
     return (
-      <div className="space-y-6 animate-pulse">
-        <div className="h-64 bg-muted rounded-lg" />
+      <div className="space-y-6">
+        <div className="h-64 bg-muted/50 rounded-xl animate-pulse" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="h-48 bg-muted rounded-lg" />
-          <div className="h-48 bg-muted rounded-lg" />
+          <div className="h-48 bg-muted/50 rounded-xl animate-pulse" />
+          <div className="h-48 bg-muted/50 rounded-xl animate-pulse" />
         </div>
-        <div className="h-48 bg-muted rounded-lg" />
+        <div className="h-48 bg-muted/50 rounded-xl animate-pulse" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Notes/Limits */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 text-sm">
-        <p className="font-medium text-amber-900">Notes / Limits:</p>
-        <ul className="list-disc list-inside text-amber-800 mt-2 space-y-1">
-          <li>This uses <strong>gross income</strong> you enter (not W-2 wages after pre-tax benefits).</li>
-          <li>It ignores credits (CTC, EV, etc.), itemized deductions, AMT, capital gains rates, NIIT, etc.</li>
-          <li>State defaults are set up for <strong>California</strong> (you can edit brackets for other states).</li>
-        </ul>
+    <div className="space-y-8">
+      {/* Notes — refined callout */}
+      <div className="animate-fade-up delay-1 rounded-xl border border-[#d4a574]/30 bg-gradient-to-r from-[#fef3c7]/40 via-[#fffbeb]/30 to-transparent p-4 backdrop-blur-sm">
+        <div className="flex items-start gap-3">
+          <div className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#b45309]/10 text-[#b45309]">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M6 1v6M6 9v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+          <div>
+            <p className="text-xs font-semibold text-[#92400e] mb-1.5">
+              Estimates Only
+            </p>
+            <ul className="text-xs text-[#78350f]/70 space-y-1 leading-relaxed">
+              <li>Uses <strong className="text-[#78350f]">gross income</strong> (not W-2 wages after pre-tax benefits)</li>
+              <li>Ignores credits (CTC, EV), itemized deductions, AMT, capital gains, NIIT</li>
+              <li>State defaults configured for <strong className="text-[#78350f]">California</strong> — edit brackets for other states</li>
+            </ul>
+          </div>
+        </div>
       </div>
 
       {/* Settings */}
-      <SettingsPanel
-        settings={state.settings}
-        onSettingsChange={handleSettingsChange}
-      />
-
-      {/* Job Tables */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <JobTable
-          title="Your Jobs"
-          jobs={state.you}
-          onJobsChange={handleYouChange}
-        />
-        <JobTable
-          title="Spouse Jobs"
-          jobs={state.spouse}
-          onJobsChange={handleSpouseChange}
+      <div className="animate-fade-up delay-2">
+        <SettingsPanel
+          settings={state.settings}
+          onSettingsChange={handleSettingsChange}
         />
       </div>
 
+      {/* Job Tables */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="animate-fade-up delay-3">
+          <JobTable
+            title="Your Jobs"
+            jobs={state.you}
+            onJobsChange={handleYouChange}
+          />
+        </div>
+        <div className="animate-fade-up delay-4">
+          <JobTable
+            title="Spouse Jobs"
+            jobs={state.spouse}
+            onJobsChange={handleSpouseChange}
+          />
+        </div>
+      </div>
+
       {/* Results */}
-      <ResultsPanel
-        results={results}
-        yourJobs={state.you}
-        spouseJobs={state.spouse}
-        fedBrackets={state.fedBrackets[state.settings.filingStatus]}
-        stateBrackets={state.stateBrackets[state.settings.filingStatus]}
-        mode={state.settings.mode}
-      />
+      <div className="animate-fade-up delay-5">
+        <ResultsPanel
+          results={results}
+          yourJobs={state.you}
+          spouseJobs={state.spouse}
+          fedBrackets={state.fedBrackets[state.settings.filingStatus]}
+          stateBrackets={state.stateBrackets[state.settings.filingStatus]}
+          mode={state.settings.mode}
+        />
+      </div>
 
       {/* Bracket Editor Dialog */}
-      <div className="flex justify-center">
+      <div className="flex justify-center animate-fade-up delay-6">
         <Dialog>
           <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Settings2 className="h-4 w-4 mr-2" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2 rounded-full border-dashed hover:border-solid transition-all"
+            >
+              <Settings2 className="h-3.5 w-3.5" />
               Edit Tax Brackets
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Tax Bracket Editor</DialogTitle>
+              <DialogTitle className="font-display">Tax Bracket Editor</DialogTitle>
               <DialogDescription>
                 Edit the federal and state tax brackets used for progressive calculation.
-                Format: <code className="bg-muted px-1 rounded text-xs">{"[{ \"upTo\": 11925, \"rate\": 0.10 }, ...]"}</code>
+                Format: <code className="bg-muted px-1.5 py-0.5 rounded text-xs font-mono">{"[{ \"upTo\": 11925, \"rate\": 0.10 }, ...]"}</code>
               </DialogDescription>
             </DialogHeader>
             <BracketEditor

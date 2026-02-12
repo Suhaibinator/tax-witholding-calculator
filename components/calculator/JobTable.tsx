@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Trash2, Plus } from "lucide-react";
@@ -34,65 +34,84 @@ export function JobTable({ title, jobs, onJobsChange }: JobTableProps) {
   };
 
   return (
-    <Card>
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg">{title}</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
+    <Card className="card-hover overflow-hidden h-full">
+      <div className="px-6 pt-5 pb-3 border-b border-border/60">
+        <h2 className="font-display text-lg font-semibold tracking-tight">{title}</h2>
+      </div>
+      <CardContent className="pt-4">
+        <div className="space-y-4">
           {jobs.map((job, index) => (
-            <div key={job.id} className="flex items-center gap-2 pb-3 border-b last:border-0 last:pb-0">
-              <div className="flex-1 min-w-0">
-                <label className="text-xs text-muted-foreground mb-1 block">Employer</label>
-                <Input
-                  type="text"
-                  value={job.name}
-                  placeholder="Company name"
-                  onChange={(e) => handleJobChange(index, "name", e.target.value)}
-                />
+            <div
+              key={job.id}
+              className="group relative rounded-lg border border-border/50 bg-muted/20 p-3 transition-colors hover:bg-muted/40 hover:border-border"
+            >
+              {/* Employer row */}
+              <div className="flex items-center gap-2 mb-2.5">
+                <div className="flex-1 min-w-0">
+                  <label className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block">
+                    Employer
+                  </label>
+                  <Input
+                    type="text"
+                    value={job.name}
+                    placeholder="Company name"
+                    onChange={(e) => handleJobChange(index, "name", e.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="pt-4">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeJob(index)}
+                    className="h-8 w-8 text-muted-foreground/40 hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
-              <div className="w-28">
-                <label className="text-xs text-muted-foreground mb-1 block">Gross</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={job.gross || ""}
-                  placeholder="0"
-                  onChange={(e) => handleJobChange(index, "gross", e.target.value)}
-                  className="text-right tabular-nums"
-                />
-              </div>
-              <div className="w-28">
-                <label className="text-xs text-muted-foreground mb-1 block">Fed W/H</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={job.fed || ""}
-                  placeholder="0"
-                  onChange={(e) => handleJobChange(index, "fed", e.target.value)}
-                  className="text-right tabular-nums"
-                />
-              </div>
-              <div className="w-28">
-                <label className="text-xs text-muted-foreground mb-1 block">State W/H</label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={job.state || ""}
-                  placeholder="0"
-                  onChange={(e) => handleJobChange(index, "state", e.target.value)}
-                  className="text-right tabular-nums"
-                />
-              </div>
-              <div className="pt-5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => removeJob(index)}
-                  className="text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+
+              {/* Numbers row */}
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block">
+                    Gross
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={job.gross || ""}
+                    placeholder="0"
+                    onChange={(e) => handleJobChange(index, "gross", e.target.value)}
+                    className="h-8 text-right tabular-nums text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block">
+                    Fed W/H
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={job.fed || ""}
+                    placeholder="0"
+                    onChange={(e) => handleJobChange(index, "fed", e.target.value)}
+                    className="h-8 text-right tabular-nums text-sm font-mono"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground/70 mb-1 block">
+                    State W/H
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    value={job.state || ""}
+                    placeholder="0"
+                    onChange={(e) => handleJobChange(index, "state", e.target.value)}
+                    className="h-8 text-right tabular-nums text-sm font-mono"
+                  />
+                </div>
               </div>
             </div>
           ))}
@@ -101,9 +120,9 @@ export function JobTable({ title, jobs, onJobsChange }: JobTableProps) {
           variant="outline"
           size="sm"
           onClick={addJob}
-          className="mt-4"
+          className="mt-4 gap-1.5 rounded-full border-dashed text-muted-foreground hover:text-foreground hover:border-solid transition-all"
         >
-          <Plus className="h-4 w-4 mr-1" />
+          <Plus className="h-3.5 w-3.5" />
           Add Job
         </Button>
       </CardContent>
